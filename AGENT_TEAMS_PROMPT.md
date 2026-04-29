@@ -17,7 +17,7 @@ Do not implement yet.
 Use Sonnet for each teammate.
 Require plan approval before implementation.
 
-The feature scope is: "{insert-issue-title}". Retrive the specifications from Github Issues.
+The feature scope is: "Content Health Dashboard for Imported Course Data". Retrive the specifications from Github Issues.
 
 Constraints:
 - avoid same-file conflicts
