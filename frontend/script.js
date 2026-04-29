@@ -82,7 +82,7 @@ async function sendMessage() {
 
         // Replace loading message with response
         loadingMessage.remove();
-        addMessage(data.answer, 'assistant', data.sources);
+        addMessage(data.answer, 'assistant', data.sources, false, data.structured_sources);
 
     } catch (error) {
         // Replace loading message with error
@@ -110,18 +110,33 @@ function createLoadingMessage() {
     return messageDiv;
 }
 
-function addMessage(content, type, sources = null, isWelcome = false) {
+function addMessage(content, type, sources = null, isWelcome = false, structuredSources = null) {
     const messageId = Date.now();
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}${isWelcome ? ' welcome-message' : ''}`;
     messageDiv.id = `message-${messageId}`;
-    
+
     // Convert markdown to HTML for assistant messages
     const displayContent = type === 'assistant' ? marked.parse(content) : escapeHtml(content);
-    
+
     let html = `<div class="message-content">${displayContent}</div>`;
-    
-    if (sources && sources.length > 0) {
+
+    // F3: Render structured source citations if available, otherwise fall back to plain sources
+    if (structuredSources && structuredSources.length > 0) {
+        const citationItems = structuredSources.map(src => {
+            const label = `${escapeHtml(src.course_title)} > Lesson ${src.lesson_number}`;
+            if (src.link) {
+                return `<a class="source-citation-link" href="${escapeHtml(src.link)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+            }
+            return `<span class="source-citation-text">${label}</span>`;
+        }).join('');
+        html += `
+            <details class="sources-collapsible">
+                <summary class="sources-header">Sources</summary>
+                <div class="sources-content sources-structured">${citationItems}</div>
+            </details>
+        `;
+    } else if (sources && sources.length > 0) {
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
@@ -129,11 +144,11 @@ function addMessage(content, type, sources = null, isWelcome = false) {
             </details>
         `;
     }
-    
+
     messageDiv.innerHTML = html;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     return messageId;
 }
 
@@ -152,35 +167,56 @@ async function createNewSession() {
     addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
 }
 
-// Load course statistics
+// Load course catalog (F1 + F2)
 async function loadCourseStats() {
     try {
-        console.log('Loading course stats...');
-        const response = await fetch(`${API_URL}/courses`);
-        if (!response.ok) throw new Error('Failed to load course stats');
-        
+        console.log('Loading course catalog...');
+        const response = await fetch(`${API_URL}/catalog`);
+        if (!response.ok) throw new Error('Failed to load course catalog');
+
         const data = await response.json();
-        console.log('Course data received:', data);
-        
-        // Update stats in UI
+        console.log('Course catalog received:', data);
+
+        // F1: Update total courses count
         if (totalCourses) {
-            totalCourses.textContent = data.total_courses;
+            totalCourses.textContent = data.courses ? data.courses.length : 0;
         }
-        
-        // Update course titles
+
+        // F1 + F2: Render course titles as links with expandable lesson sections
         if (courseTitles) {
-            if (data.course_titles && data.course_titles.length > 0) {
-                courseTitles.innerHTML = data.course_titles
-                    .map(title => `<div class="course-title-item">${title}</div>`)
-                    .join('');
+            if (data.courses && data.courses.length > 0) {
+                courseTitles.innerHTML = data.courses.map(course => {
+                    // F1: Course title — link if course_link is available, plain text otherwise
+                    const titleHtml = course.course_link
+                        ? `<a class="course-title-link" href="${escapeHtml(course.course_link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(course.title)}</a>`
+                        : `<span class="course-title-plain">${escapeHtml(course.title)}</span>`;
+
+                    // F2: Lessons expandable section (only if lessons exist)
+                    let lessonsHtml = '';
+                    if (course.lessons && course.lessons.length > 0) {
+                        const lessonItems = course.lessons.map(lesson => {
+                            const lessonLabel = `Lesson ${lesson.lesson_number}: ${escapeHtml(lesson.title)}`;
+                            const lessonContent = lesson.lesson_link
+                                ? `<a class="lesson-link" href="${escapeHtml(lesson.lesson_link)}" target="_blank" rel="noopener noreferrer">${lessonLabel}</a>`
+                                : `<span class="lesson-plain">${lessonLabel}</span>`;
+                            return `<div class="lesson-item">${lessonContent}</div>`;
+                        }).join('');
+                        lessonsHtml = `
+                            <details class="lessons-collapsible">
+                                <summary class="lessons-header">Lessons (${course.lessons.length})</summary>
+                                <div class="lessons-list">${lessonItems}</div>
+                            </details>`;
+                    }
+
+                    return `<div class="course-title-item">${titleHtml}${lessonsHtml}</div>`;
+                }).join('');
             } else {
                 courseTitles.innerHTML = '<span class="no-courses">No courses available</span>';
             }
         }
-        
+
     } catch (error) {
-        console.error('Error loading course stats:', error);
-        // Set default values on error
+        console.error('Error loading course catalog:', error);
         if (totalCourses) {
             totalCourses.textContent = '0';
         }

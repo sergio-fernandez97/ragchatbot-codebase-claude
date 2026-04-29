@@ -19,10 +19,11 @@ class Tool(ABC):
 
 class CourseSearchTool(Tool):
     """Tool for searching course content with semantic course name matching"""
-    
+
     def __init__(self, vector_store: VectorStore):
         self.store = vector_store
         self.last_sources = []  # Track sources from last search
+        self.last_metadata = []  # Track raw metadata from last search
     
     def get_tool_definition(self) -> Dict[str, Any]:
         """Return Anthropic tool definition for this tool"""
@@ -110,7 +111,8 @@ class CourseSearchTool(Tool):
         
         # Store sources for retrieval
         self.last_sources = sources
-        
+        self.last_metadata = list(results.metadata)
+
         return "\n\n".join(formatted)
 
 class ToolManager:
@@ -147,8 +149,17 @@ class ToolManager:
                 return tool.last_sources
         return []
 
+    def get_last_metadata(self) -> list:
+        """Get raw metadata from the last search operation"""
+        for tool in self.tools.values():
+            if hasattr(tool, 'last_metadata') and tool.last_metadata:
+                return tool.last_metadata
+        return []
+
     def reset_sources(self):
         """Reset sources from all tools that track sources"""
         for tool in self.tools.values():
             if hasattr(tool, 'last_sources'):
                 tool.last_sources = []
+            if hasattr(tool, 'last_metadata'):
+                tool.last_metadata = []
