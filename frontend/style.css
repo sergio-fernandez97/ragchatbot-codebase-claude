@@ -601,6 +601,169 @@ details[open] .suggested-header::before {
     text-transform: none;
 }
 
+/* F4: Sidebar course links */
+.course-title-link,
+.course-title-plain {
+    display: block;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.course-title-link {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.course-title-link:hover {
+    text-decoration: underline;
+    color: var(--primary-hover);
+}
+
+.course-title-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    border-radius: 3px;
+}
+
+.course-title-link::after {
+    content: " \2197";
+    font-size: 0.75em;
+    opacity: 0.7;
+}
+
+.course-title-plain {
+    color: var(--text-primary);
+}
+
+/* F2: Lesson expandable sections nested under courses */
+.lessons-collapsible {
+    margin-top: 0.4rem;
+    margin-left: 0.75rem;
+    border-left: 2px solid var(--border-color);
+    padding-left: 0.5rem;
+}
+
+.lessons-header {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    list-style: none;
+    padding: 0.2rem 0;
+    user-select: none;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    transition: color 0.2s ease;
+}
+
+.lessons-header:hover {
+    color: var(--primary-color);
+}
+
+.lessons-header:focus {
+    outline: none;
+    color: var(--primary-color);
+}
+
+.lessons-header::-webkit-details-marker {
+    display: none;
+}
+
+.lessons-header::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 0.4rem;
+    transition: transform 0.2s ease;
+    font-size: 0.65rem;
+}
+
+details[open] .lessons-header::before {
+    transform: rotate(90deg);
+}
+
+.lessons-list {
+    padding: 0.25rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.lesson-item {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    padding: 0.2rem 0;
+}
+
+/* F4: Lesson links */
+.lesson-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    word-break: break-word;
+    display: block;
+}
+
+.lesson-link:hover {
+    text-decoration: underline;
+    color: var(--primary-hover);
+}
+
+.lesson-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    border-radius: 3px;
+}
+
+.lesson-link::after {
+    content: " \2197";
+    font-size: 0.7em;
+    opacity: 0.7;
+}
+
+.lesson-plain {
+    color: var(--text-secondary);
+    word-break: break-word;
+    display: block;
+}
+
+/* F4: Structured source citations in chat — vertical list */
+.sources-structured {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.source-citation-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.8rem;
+    word-break: break-word;
+    display: block;
+}
+
+.source-citation-link:hover {
+    text-decoration: underline;
+    color: var(--primary-hover);
+}
+
+.source-citation-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    border-radius: 3px;
+}
+
+.source-citation-link::after {
+    content: " \2197";
+    font-size: 0.7em;
+    opacity: 0.7;
+}
+
+.source-citation-text {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    display: block;
+}
+
 /* Suggested Questions in Sidebar */
 .suggested-items {
     display: flex;

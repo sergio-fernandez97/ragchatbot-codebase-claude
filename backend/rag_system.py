@@ -99,25 +99,25 @@ class RAGSystem:
         
         return total_courses, total_chunks
     
-    def query(self, query: str, session_id: Optional[str] = None) -> Tuple[str, List[str]]:
+    def query(self, query: str, session_id: Optional[str] = None) -> Tuple[str, List[str], List[Dict]]:
         """
         Process a user query using the RAG system with tool-based search.
-        
+
         Args:
             query: User's question
             session_id: Optional session ID for conversation context
-            
+
         Returns:
-            Tuple of (response, sources list - empty for tool-based approach)
+            Tuple of (response, sources list, structured_sources list of dicts)
         """
         # Create prompt for the AI with clear instructions
         prompt = f"""Answer this question about course materials: {query}"""
-        
+
         # Get conversation history if session exists
         history = None
         if session_id:
             history = self.session_manager.get_conversation_history(session_id)
-        
+
         # Generate response using AI with tools
         response = self.ai_generator.generate_response(
             query=prompt,
@@ -125,19 +125,41 @@ class RAGSystem:
             tools=self.tool_manager.get_tool_definitions(),
             tool_manager=self.tool_manager
         )
-        
+
         # Get sources from the search tool
         sources = self.tool_manager.get_last_sources()
+        raw_metadata = self.tool_manager.get_last_metadata()
+
+        # Build structured sources from raw search metadata
+        structured_sources: List[Dict] = []
+        seen = set()
+        for meta in raw_metadata:
+            course_title = meta.get('course_title', '')
+            lesson_number = meta.get('lesson_number')
+            key = (course_title, lesson_number)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            # Resolve links from vector store
+            link = self.vector_store.get_lesson_link(course_title, lesson_number) if lesson_number is not None else self.vector_store.get_course_link(course_title)
+
+            structured_sources.append({
+                "course_title": course_title,
+                "lesson_number": lesson_number,
+                "lesson_title": None,  # not stored in chunk metadata
+                "link": link
+            })
 
         # Reset sources after retrieving them
         self.tool_manager.reset_sources()
-        
+
         # Update conversation history
         if session_id:
             self.session_manager.add_exchange(session_id, query, response)
-        
+
         # Return response with sources from tool searches
-        return response, sources
+        return response, sources, structured_sources
     
     def get_course_analytics(self) -> Dict:
         """Get analytics about the course catalog"""
@@ -145,3 +167,7 @@ class RAGSystem:
             "total_courses": self.vector_store.get_course_count(),
             "course_titles": self.vector_store.get_existing_course_titles()
         }
+
+    def get_course_catalog(self) -> List[Dict]:
+        """Return full course catalog with lesson details and links"""
+        return self.vector_store.get_all_courses_metadata()

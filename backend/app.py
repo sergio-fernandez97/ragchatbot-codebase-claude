@@ -40,16 +40,42 @@ class QueryRequest(BaseModel):
     query: str
     session_id: Optional[str] = None
 
+class StructuredSource(BaseModel):
+    """A single structured source reference from a query result"""
+    course_title: str
+    lesson_number: Optional[int] = None
+    lesson_title: Optional[str] = None
+    link: Optional[str] = None
+
 class QueryResponse(BaseModel):
     """Response model for course queries"""
     answer: str
     sources: List[str]
+    structured_sources: Optional[List[StructuredSource]] = None
     session_id: str
 
 class CourseStats(BaseModel):
     """Response model for course statistics"""
     total_courses: int
     course_titles: List[str]
+
+class CatalogLesson(BaseModel):
+    """A single lesson entry in the catalog"""
+    lesson_number: int
+    title: str
+    lesson_link: Optional[str] = None
+
+class CatalogCourse(BaseModel):
+    """A single course entry in the catalog"""
+    title: str
+    instructor: Optional[str] = None
+    course_link: Optional[str] = None
+    lesson_count: int
+    lessons: List[CatalogLesson]
+
+class CatalogResponse(BaseModel):
+    """Response model for the course catalog"""
+    courses: List[CatalogCourse]
 
 # API Endpoints
 
@@ -63,11 +89,14 @@ async def query_documents(request: QueryRequest):
             session_id = rag_system.session_manager.create_session()
         
         # Process query using RAG system
-        answer, sources = rag_system.query(request.query, session_id)
-        
+        answer, sources, structured_sources_data = rag_system.query(request.query, session_id)
+
+        structured_sources = [StructuredSource(**s) for s in structured_sources_data] if structured_sources_data else None
+
         return QueryResponse(
             answer=answer,
             sources=sources,
+            structured_sources=structured_sources,
             session_id=session_id
         )
     except Exception as e:
@@ -82,6 +111,32 @@ async def get_course_stats():
             total_courses=analytics["total_courses"],
             course_titles=analytics["course_titles"]
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/catalog", response_model=CatalogResponse)
+async def get_course_catalog():
+    """Get full course catalog with lesson details and links"""
+    try:
+        courses_data = rag_system.get_course_catalog()
+        courses = []
+        for course in courses_data:
+            lessons = [
+                CatalogLesson(
+                    lesson_number=lesson["lesson_number"],
+                    title=lesson.get("lesson_title") or lesson.get("title", ""),
+                    lesson_link=lesson.get("lesson_link")
+                )
+                for lesson in course.get("lessons", [])
+            ]
+            courses.append(CatalogCourse(
+                title=course.get("title", ""),
+                instructor=course.get("instructor"),
+                course_link=course.get("course_link"),
+                lesson_count=course.get("lesson_count", len(lessons)),
+                lessons=lessons
+            ))
+        return CatalogResponse(courses=courses)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
