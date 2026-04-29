@@ -1,0 +1,47 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "deny": [
+        "Read(./issues/**)",
+        "Write(./issues/**)"
+    ]
+  },
+  "hooks": {
+    "TaskCompleted": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Allow completion only if the teammate has clearly stated: 1) files changed, 2) verification performed, and 3) any remaining risk. If anything is missing, respond with {\"ok\": false, \"reason\": \"what is missing\"}."
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If the teammate is going idle without a clear status update, respond with {\"ok\": false, \"reason\": \"Summarize current status, blockers, and next step before going idle.\"}. Otherwise respond with {\"ok\": true}."
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"$CLAUDE_NOTIFICATION\" with title \"Claude Code\"' 2>/dev/null; echo '{\"ok\": true}'"
+          }
+        ]
+      }
+    ]
+  }
+}

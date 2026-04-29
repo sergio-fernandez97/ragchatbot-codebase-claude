@@ -54,3 +54,6 @@ The application will be available at:
 - Web Interface: `http://localhost:8000`
 - API Documentation: `http://localhost:8000/docs`
 
+## Live Session
+Follow the step-by-step by at [STEP_BY_STEP.md](./STEP_BY_STEP.md)
+

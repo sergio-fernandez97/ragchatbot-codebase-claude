@@ -716,3 +716,134 @@ details[open] .suggested-header::before {
         width: 280px;
     }
 }
+
+/* Course links in sidebar */
+.course-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    display: block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    transition: color 0.2s ease;
+}
+
+.course-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.course-link:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* External link indicator */
+.course-link::after,
+.lesson-link::after {
+    content: ' \2197'; /* ↗ arrow */
+    font-size: 0.7em;
+    opacity: 0.6;
+}
+
+.course-title-text {
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    display: block;
+}
+
+/* Course item container */
+.course-item {
+    padding: 0.5rem 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.course-item:last-child {
+    border-bottom: none;
+}
+
+.course-instructor {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.15rem;
+}
+
+/* Lesson expandable section */
+.lesson-details {
+    margin-top: 0.25rem;
+}
+
+.lesson-details summary {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem 0;
+    user-select: none;
+}
+
+.lesson-details summary:hover {
+    color: var(--text-primary);
+}
+
+.lesson-list {
+    padding: 0.25rem 0 0.25rem 0.75rem;
+}
+
+.lesson-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    display: block;
+    padding: 0.2rem 0;
+    transition: color 0.2s ease;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.lesson-link:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.lesson-link:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+.lesson-text {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    display: block;
+    padding: 0.2rem 0;
+}
+
+/* Citation links in chat sources */
+.citation-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.citation-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.citation-link:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
+    border-radius: 2px;
+}
+
+.citation-item {
+    display: inline;
+}
+
+.citation-item + .citation-item::before {
+    content: ' · ';
+    color: var(--text-secondary);
+}

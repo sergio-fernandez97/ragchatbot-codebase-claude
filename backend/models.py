@@ -20,3 +20,29 @@ class CourseChunk(BaseModel):
     course_title: str                   # Which course this chunk belongs to
     lesson_number: Optional[int] = None # Which lesson this chunk is from
     chunk_index: int                    # Position of this chunk in the document
+
+class LessonDetail(BaseModel):
+    """Lesson metadata for catalog response"""
+    lesson_number: int
+    title: str
+    lesson_link: Optional[str] = None
+
+class CatalogCourse(BaseModel):
+    """Course metadata for catalog response"""
+    title: str
+    instructor: Optional[str] = None
+    course_link: Optional[str] = None
+    lesson_count: int = 0
+    lessons: List[LessonDetail] = []
+
+class CatalogResponse(BaseModel):
+    """Response model for course catalog"""
+    total_courses: int
+    courses: List[CatalogCourse]
+
+class SourceCitation(BaseModel):
+    """Structured citation for query response sources"""
+    course_title: str
+    lesson_number: Optional[int] = None
+    course_link: Optional[str] = None
+    lesson_link: Optional[str] = None
