@@ -11,6 +11,7 @@ import os
 
 from config import config
 from rag_system import RAGSystem
+from models import CatalogResponse, CatalogCourse, LessonDetail, SourceCitation
 
 # Initialize FastAPI app
 app = FastAPI(title="Course Materials RAG System", root_path="")
@@ -44,6 +45,7 @@ class QueryResponse(BaseModel):
     """Response model for course queries"""
     answer: str
     sources: List[str]
+    citations: List[SourceCitation] = []
     session_id: str
 
 class CourseStats(BaseModel):
@@ -63,11 +65,12 @@ async def query_documents(request: QueryRequest):
             session_id = rag_system.session_manager.create_session()
         
         # Process query using RAG system
-        answer, sources = rag_system.query(request.query, session_id)
-        
+        answer, sources, citations = rag_system.query(request.query, session_id)
+
         return QueryResponse(
             answer=answer,
             sources=sources,
+            citations=[SourceCitation(**c) for c in citations],
             session_id=session_id
         )
     except Exception as e:
@@ -81,6 +84,24 @@ async def get_course_stats():
         return CourseStats(
             total_courses=analytics["total_courses"],
             course_titles=analytics["course_titles"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/catalog", response_model=CatalogResponse)
+async def get_catalog():
+    """Get full course catalog with lesson details and links"""
+    try:
+        catalog = rag_system.get_catalog()
+        return CatalogResponse(
+            total_courses=catalog["total_courses"],
+            courses=[CatalogCourse(
+                title=c["title"],
+                instructor=c.get("instructor"),
+                course_link=c.get("course_link"),
+                lesson_count=c.get("lesson_count", 0),
+                lessons=[LessonDetail(**l) for l in c.get("lessons", [])]
+            ) for c in catalog["courses"]]
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

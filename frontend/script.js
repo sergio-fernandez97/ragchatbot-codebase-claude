@@ -71,7 +71,11 @@ async function sendMessage() {
             })
         });
 
-        if (!response.ok) throw new Error('Query failed');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            const detail = errorData?.detail || `Server error (${response.status})`;
+            throw new Error(detail);
+        }
 
         const data = await response.json();
         
@@ -82,7 +86,7 @@ async function sendMessage() {
 
         // Replace loading message with response
         loadingMessage.remove();
-        addMessage(data.answer, 'assistant', data.sources);
+        addMessage(data.answer, 'assistant', data.sources, false, data.citations);
 
     } catch (error) {
         // Replace loading message with error
@@ -110,30 +114,47 @@ function createLoadingMessage() {
     return messageDiv;
 }
 
-function addMessage(content, type, sources = null, isWelcome = false) {
+function addMessage(content, type, sources = null, isWelcome = false, citations = null) {
     const messageId = Date.now();
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}${isWelcome ? ' welcome-message' : ''}`;
     messageDiv.id = `message-${messageId}`;
-    
+
     // Convert markdown to HTML for assistant messages
     const displayContent = type === 'assistant' ? marked.parse(content) : escapeHtml(content);
-    
+
     let html = `<div class="message-content">${displayContent}</div>`;
-    
-    if (sources && sources.length > 0) {
+
+    if (citations && citations.length > 0) {
+        const citationItems = citations.map(c => {
+            const label = c.lesson_number
+                ? `${escapeHtml(c.course_title)} — Lesson ${c.lesson_number}`
+                : escapeHtml(c.course_title);
+            const href = c.lesson_link || c.course_link;
+            if (href) {
+                return `<span class="citation-item"><a href="${escapeHtml(href)}" class="citation-link" target="_blank" rel="noopener noreferrer">${label}</a></span>`;
+            }
+            return `<span class="citation-item">${label}</span>`;
+        }).join('');
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <div class="sources-content">${citationItems}</div>
+            </details>
+        `;
+    } else if (sources && sources.length > 0) {
+        html += `
+            <details class="sources-collapsible">
+                <summary class="sources-header">Sources</summary>
+                <div class="sources-content">${sources.map(escapeHtml).join(', ')}</div>
             </details>
         `;
     }
-    
+
     messageDiv.innerHTML = html;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     return messageId;
 }
 
@@ -156,28 +177,52 @@ async function createNewSession() {
 async function loadCourseStats() {
     try {
         console.log('Loading course stats...');
-        const response = await fetch(`${API_URL}/courses`);
+        const response = await fetch(`${API_URL}/catalog`);
         if (!response.ok) throw new Error('Failed to load course stats');
-        
+
         const data = await response.json();
         console.log('Course data received:', data);
-        
+
         // Update stats in UI
         if (totalCourses) {
             totalCourses.textContent = data.total_courses;
         }
-        
+
         // Update course titles
         if (courseTitles) {
-            if (data.course_titles && data.course_titles.length > 0) {
-                courseTitles.innerHTML = data.course_titles
-                    .map(title => `<div class="course-title-item">${title}</div>`)
-                    .join('');
+            if (data.courses && data.courses.length > 0) {
+                courseTitles.innerHTML = data.courses.map(course => {
+                    const titleHtml = course.course_link
+                        ? `<a href="${escapeHtml(course.course_link)}" class="course-link" target="_blank" rel="noopener noreferrer">${escapeHtml(course.title)}</a>`
+                        : `<span class="course-title-text">${escapeHtml(course.title)}</span>`;
+
+                    const instructorHtml = course.instructor
+                        ? `<div class="course-instructor">${escapeHtml(course.instructor)}</div>`
+                        : '';
+
+                    let lessonsHtml = '';
+                    if (course.lessons && course.lessons.length > 0) {
+                        const lessonItems = course.lessons.map(lesson => {
+                            const lessonLabel = `Lesson ${lesson.lesson_number}: ${escapeHtml(lesson.title)}`;
+                            if (lesson.lesson_link) {
+                                return `<a href="${escapeHtml(lesson.lesson_link)}" class="lesson-link" target="_blank" rel="noopener noreferrer">${lessonLabel}</a>`;
+                            }
+                            return `<span class="lesson-text">${lessonLabel}</span>`;
+                        }).join('');
+                        lessonsHtml = `
+                            <details class="lesson-details">
+                                <summary>${course.lesson_count || course.lessons.length} lessons</summary>
+                                <div class="lesson-list">${lessonItems}</div>
+                            </details>`;
+                    }
+
+                    return `<div class="course-item">${titleHtml}${instructorHtml}${lessonsHtml}</div>`;
+                }).join('');
             } else {
                 courseTitles.innerHTML = '<span class="no-courses">No courses available</span>';
             }
         }
-        
+
     } catch (error) {
         console.error('Error loading course stats:', error);
         // Set default values on error

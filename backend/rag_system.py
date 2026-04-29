@@ -99,7 +99,31 @@ class RAGSystem:
         
         return total_courses, total_chunks
     
-    def query(self, query: str, session_id: Optional[str] = None) -> Tuple[str, List[str]]:
+    def get_catalog(self) -> Dict:
+        """Get full course catalog with lesson details and links"""
+        all_metadata = self.vector_store.get_all_courses_metadata()
+        courses = []
+        for meta in all_metadata:
+            lessons = []
+            for lesson in meta.get('lessons', []):
+                lessons.append({
+                    "lesson_number": lesson.get("lesson_number"),
+                    "title": lesson.get("lesson_title", ""),
+                    "lesson_link": lesson.get("lesson_link")
+                })
+            courses.append({
+                "title": meta.get("title", ""),
+                "instructor": meta.get("instructor"),
+                "course_link": meta.get("course_link"),
+                "lesson_count": meta.get("lesson_count", 0),
+                "lessons": lessons
+            })
+        return {
+            "total_courses": len(courses),
+            "courses": courses
+        }
+
+    def query(self, query: str, session_id: Optional[str] = None) -> Tuple[str, List[str], List[Dict]]:
         """
         Process a user query using the RAG system with tool-based search.
         
@@ -129,15 +153,54 @@ class RAGSystem:
         # Get sources from the search tool
         sources = self.tool_manager.get_last_sources()
 
+        # Build structured citations from sources
+        citations = self._build_citations(sources)
+
         # Reset sources after retrieving them
         self.tool_manager.reset_sources()
-        
+
         # Update conversation history
         if session_id:
             self.session_manager.add_exchange(session_id, query, response)
-        
+
         # Return response with sources from tool searches
-        return response, sources
+        return response, sources, citations
+
+    def _build_citations(self, sources: List[str]) -> List[Dict]:
+        """Build structured citation objects from source strings"""
+        import re
+        citations = []
+        seen = set()
+        for source in sources:
+            # Parse source string - format is typically "Course Title" or "Course Title - Lesson N"
+            course_title = source.strip()
+            lesson_number = None
+
+            # Try to extract lesson number from source string
+            lesson_match = re.search(r'[–\-]\s*Lesson\s+(\d+)', source)
+            if lesson_match:
+                lesson_number = int(lesson_match.group(1))
+                course_title = source[:lesson_match.start()].strip()
+
+            # Deduplicate
+            key = (course_title, lesson_number)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            # Resolve links from vector store
+            course_link = self.vector_store.get_course_link(course_title)
+            lesson_link = None
+            if lesson_number is not None:
+                lesson_link = self.vector_store.get_lesson_link(course_title, lesson_number)
+
+            citations.append({
+                "course_title": course_title,
+                "lesson_number": lesson_number,
+                "course_link": course_link,
+                "lesson_link": lesson_link
+            })
+        return citations
     
     def get_course_analytics(self) -> Dict:
         """Get analytics about the course catalog"""
