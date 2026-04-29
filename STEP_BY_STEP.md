@@ -636,3 +636,4 @@ claude plugin install github@claude-plugins-official --scope project
 - Skills: [https://code.claude.com/docs/en/slash-commands](https://code.claude.com/docs/en/slash-commands)
 - Hooks: [https://code.claude.com/docs/en/hooks](https://code.claude.com/docs/en/hooks)
 - Settings/configuration: [https://code.claude.com/docs/en/configuration](https://code.claude.com/docs/en/configuration)
+- The settings.json That Made Claude Code 10x Faster [https://x.com/zodchiii/status/2049421095350972922?s=12](https://x.com/zodchiii/status/2049421095350972922?s=12)
