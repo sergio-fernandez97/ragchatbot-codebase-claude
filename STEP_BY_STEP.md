@@ -8,7 +8,7 @@ It covers:
 - using `claude --worktree`
 - configuring and using agent teams
 - demonstrating `/install-github-app`
-- demonstrating plugins
+- ~~demonstrating plugins~~
 - demonstrating project skills
 - demonstrating hooks
 - implementing three selected product features with agent-team orchestration
@@ -116,7 +116,7 @@ What to explain:
 
 ## Step 3: Enable Agent Teams
 
-Agent teams are experimental and disabled by default.
+[Agent teams](https://code.claude.com/docs/en/agent-teams) are experimental and disabled by default.
 
 Use either a temporary shell export:
 
@@ -464,7 +464,7 @@ QA teammate:
 - check mobile and long-title behavior
 - if browser automation is available, capture a quick verification pass
 
-## Step 12: Useful Prompts During The Demo
+## [OPTIONAL] Step 12: Useful Prompts During The Demo
 
 Use these when the team needs steering.
 
@@ -564,7 +564,15 @@ What to explain:
 - clean shutdown matters because agent teams create shared runtime state
 - cleanup should be initiated by the lead, not by individual teammates
 
-## Step 16: Transition To The Practical Assignment
+## Step 16: Create a skill for creating PR after each feature is finished.
+```
+Create a skill at .claude/skills/git-pr-action/SKILL.md from the following prompt: "..."
+```
+
+## Step 17: Use `claude --worktree` + agent teams.
+Use a modified version of the prompt located at [AGENT_TEAMS_PROMPT.md](./AGENT_TEAMS_PROMPT.md).
+
+## Step 18: Transition To The Practical Assignment
 
 End the live session by assigning the remaining two features:
 
